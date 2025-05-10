@@ -1,7 +1,7 @@
 [project]
 name = "ml-service"
 version = "0.1.0"
-description = "FastAPI service for SMS spam classification and optional image inference."
+description = "FastAPI service for SMS spam classification."
 authors = [
   { name = "Ilya Khorunzhiy", email = "khorunzhiy.ib@gmail.com" }
 ]
