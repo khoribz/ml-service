@@ -14,3 +14,15 @@ class MetaResponse(BaseModel):
     git_commit: str
     saved_at: str
     experiment: str
+
+
+class BatchPrediction(BaseModel):
+    index: int
+    label: int
+    probability: float
+
+class ForwardBatchResponse(BaseModel):
+    predictions: list[BatchPrediction]
+
+class EvaluationResponse(ForwardBatchResponse):
+    metrics: dict[str, float]
