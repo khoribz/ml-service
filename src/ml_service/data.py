@@ -29,3 +29,12 @@ def load_split(test_size: float = 0.2, random_state: int = 42):
         stratify=df["label"],
         random_state=random_state,
     )
+
+def load_df(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42):
+    return train_test_split(
+        df["text"],
+        df["label"],
+        test_size=test_size,
+        stratify=df["label"],
+        random_state=random_state,
+    )

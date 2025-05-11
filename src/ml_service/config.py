@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     EXPERIMENT: str = "lr-tfidf-baseline"
     ONNX_OPSET: int = 12
     LOGISTIC_REGRESSION_ITERATIONS = 400
+    PUSHGATEWAY_URL: str = "http://localhost:9091"
 
     class Config:
         env_file = ".env"

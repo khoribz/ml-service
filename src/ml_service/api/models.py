@@ -24,5 +24,6 @@ class BatchPrediction(BaseModel):
 class ForwardBatchResponse(BaseModel):
     predictions: list[BatchPrediction]
 
+
 class EvaluationResponse(ForwardBatchResponse):
     metrics: dict[str, float]

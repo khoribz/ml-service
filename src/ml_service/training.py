@@ -3,16 +3,18 @@ from datetime import datetime, UTC
 from pathlib import Path
 import json
 import onnx
+import pandas as pd
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import StringTensorType
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, roc_auc_score
 from torch.utils.tensorboard import SummaryWriter
 from .config import settings
 from .logging import logger
-from .data import load_split
+from .data import load_split, load_df
 
 MODELS_DIR = Path("models"); MODELS_DIR.mkdir(exist_ok=True)
 METRICS_DIR = Path("metrics"); METRICS_DIR.mkdir(exist_ok=True)
@@ -39,8 +41,12 @@ def git_hash() -> str:
         .strip()
     )
 
-def train() -> Path:
-    X_tr, X_val, y_tr, y_val = load_split()
+def train(df: pd.DataFrame | None = None) -> tuple[Path, dict]:
+    if df is None:
+        X_tr, X_val, y_tr, y_val = load_split()
+    else:
+        X_tr, X_val, y_tr, y_val = load_df(df)
+
     pipe = _build_pipeline(max_iter=settings.LOGISTIC_REGRESSION_ITERATIONS)
 
     writer = SummaryWriter(PLOTS_DIR / settings.EXPERIMENT)
@@ -80,7 +86,7 @@ def train() -> Path:
     with open(METRICS_DIR / "train.json", "w") as fp:
         json.dump(metrics, fp, indent=2)
 
-    return model_path
+    return model_path, metrics
 
 
 if __name__ == "__main__":
