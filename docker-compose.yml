@@ -14,6 +14,7 @@ services:
     image: spam-app-backend:latest
     environment:
       PUSHGATEWAY_URL: pushgateway:9091
+      GIT_COMMIT: ${GIT_COMMIT}
     ports: ["8000:8000"]
     depends_on: [pushgateway]
 

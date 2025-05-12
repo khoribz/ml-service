@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ONNX_OPSET: int = 12
     LOGISTIC_REGRESSION_ITERATIONS = 400
     PUSHGATEWAY_URL: str = "pushgateway:9091"
+    GIT_HASH: str = "unknown"
 
     class Config:
         env_file = ".env"
