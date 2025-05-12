@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  # ─────── Frontend ───────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    image: spam-app-frontend:latest
+    ports: ["80:80"]
+    depends_on: [backend]
+
+  # ─────── Backend (FastAPI + metrics) ────────────────────────────
+  backend:
+    build: ./backend
+    image: spam-app-backend:latest
+    environment:
+      PUSHGATEWAY_URL: pushgateway:9091
+    ports: ["8000:8000"]
+    depends_on: [pushgateway]
+
+  # ─────── Monitoring ► Prometheus + Pushgateway + Grafana ───────
+
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports: [ "9090:9090" ]
+
+  pushgateway:
+    image: prom/pushgateway:v1.11.1
+    ports: [ "9091:9091" ]
+
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/local-config.yaml
+    ports: [ "3100:3100" ]
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    ports: [ "3000:3000" ]
+    volumes:
+      - ./monitoring/provisioning:/etc/grafana/provisioning
+    depends_on: [ prometheus, loki ]
+
+
+networks:
+  default: {}
