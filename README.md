@@ -43,13 +43,10 @@ flowchart LR
 $ git clone https://github.com/khoribz/ml-service.git
 $ cd ml-service
 
-# 2. Создать .env
-$ cp .env.example .env      # при желании отредактируйте
-
-# 3. Собрать и запустить
+# 2. Собрать и запустить
 $ docker compose up -d --build
 
-# 4. Проверить сервисы
+# 3. Проверить сервисы
 #    UI:          http://localhost             (порт 80)
 #    Swagger:     http://localhost:8000/docs   (backend)
 #    Grafana:     http://localhost:3000 (admin/admin)
