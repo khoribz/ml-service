@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="app()" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <title>Spam App Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6 flex flex-col gap-8">
+<h1 class="text-3xl font-semibold text-gray-800 text-center">🛠️ Консоль&nbsp;Spam&nbsp;App</h1>
+
+<!-- Tabs ----------------------------------------------------------------------->
+<div class="w-full max-w-[67rem] mx-auto bg-white rounded-2xl shadow-2xl p-6" x-data="{ tab: 'single' }">
+    <nav class="flex flex-nowrap gap-2 mb-6 overflow-x-auto whitespace-nowrap">
+        <template x-for="item in tabs" :key="item.id">
+            <button @click="tab = item.id"
+                    :class="tab === item.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium">
+                <span x-text="item.title"></span>
+            </button>
+        </template>
+    </nav>
+
+    <!-- Single Prediction --------------------------------------------------------->
+    <section x-show="tab === 'single'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Единичное сообщение</h2>
+        <textarea x-model="single.text" placeholder="Введите текст…"
+                  class="w-full h-40 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+        <div class="flex justify-end gap-3 mt-3">
+            <button @click="single.clear()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Очистить</button>
+            <button @click="single.send()" :disabled="single.loading || !single.text.trim()"
+                    class="px-5 py-2 rounded-lg text-white flex items-center justify-center"
+                    :class="single.loading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">
+                <span x-text="single.loading ? 'Проверка…' : 'Отправить'"></span>
+            </button>
+        </div>
+        <template x-if="single.result">
+            <div class="mt-4 text-lg font-medium"
+                 :class="+single.result.label === 0 ? 'text-emerald-600' : 'text-red-600'">
+          <span
+                  x-text="+single.result.label === 0
+                    ? `✅ Не спам (вероятность ${single.percent} %)`
+                    : `🚫 Спам (вероятность ${single.percent} %)`">
+          </span>
+            </div>
+        </template>
+    </section>
+
+    <!-- Add Data ------------------------------------------------------------------>
+    <section x-show="tab === 'add'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Добавить CSV с&nbsp;данными</h2>
+        <input type="file" @change="add.file = $event.target.files[0]" accept=".csv" class="border rounded-lg p-2">
+        <div class="flex justify-end gap-3 mt-3">
+            <button @click="add.upload()" :disabled="!add.file || add.loading" class="px-5 py-2 rounded-lg text-white"
+                    :class="add.loading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">
+                <span x-text="add.loading ? 'Загрузка…' : 'Загрузить'"></span>
+            </button>
+        </div>
+        <template x-if="add.rows !== null">
+            <p class="mt-4 text-lg text-emerald-600">✔️ Добавлено строк: <span x-text="add.rows"></span></p>
+        </template>
+    </section>
+
+    <!-- Retrain -------------------------------------------------------------------->
+    <section x-show="tab === 'retrain'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Переобучить модель</h2>
+        <button @click="retrain.start()" :disabled="retrain.loading" class="px-6 py-3 rounded-lg text-white"
+                :class="retrain.loading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">
+            <span x-text="retrain.loading ? 'Запуск…' : 'Запустить переобучение'"></span>
+        </button>
+        <template x-if="retrain.done">
+            <p class="mt-4 text-lg text-emerald-600">🚀 Переобучение запущено!</p>
+        </template>
+    </section>
+
+    <!-- Metrics -------------------------------------------------------------------->
+    <section x-show="tab === 'metrics'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Метрики эксперимента</h2>
+        <div class="flex items-center gap-3">
+            <input type="number" x-model.number="metrics.id" placeholder="ID эксперимента"
+                   class="w-40 p-2 border rounded-lg">
+            <button @click="metrics.fetch()" :disabled="!metrics.id"
+                    class="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700">Получить
+            </button>
+        </div>
+        <template x-if="metrics.data">
+            <pre class="mt-4 bg-gray-100 p-4 rounded-lg overflow-auto text-sm"
+                 x-text="JSON.stringify(metrics.data, null, 2)"></pre>
+        </template>
+    </section>
+
+    <!-- Deploy --------------------------------------------------------------------->
+    <section x-show="tab === 'deploy'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Деплой модели</h2>
+        <div class="flex items-center gap-3">
+            <input type="number" x-model.number="deploy.id" placeholder="ID эксперимента"
+                   class="w-40 p-2 border rounded-lg">
+            <button @click="deploy.run()" :disabled="!deploy.id || deploy.loading"
+                    class="px-4 py-2 rounded-lg text-white"
+                    :class="deploy.loading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">Деплоить
+            </button>
+        </div>
+        <template x-if="deploy.status">
+            <p class="mt-4 text-lg text-emerald-600">✅ Активна модель с&nbsp;ID <span
+                    x-text="deploy.status.active_id"></span></p>
+        </template>
+    </section>
+
+    <!-- Metadata ------------------------------------------------------------------->
+    <section x-show="tab === 'meta'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Метаданные текущей модели</h2>
+        <button @click="meta.fetch()" :disabled="meta.loading" class="px-6 py-3 rounded-lg text-white"
+                :class="meta.loading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">Получить метаданные
+        </button>
+        <template x-if="meta.data">
+            <pre class="mt-4 bg-gray-100 p-4 rounded-lg overflow-auto text-sm"
+                 x-text="JSON.stringify(meta.data, null, 2)"></pre>
+        </template>
+    </section>
+
+    <!-- Forward Batch -------------------------------------------------------------->
+    <section x-show="tab === 'batch'" x-cloak>
+        <h2 class="text-xl font-semibold mb-4">Батч‑прогноз</h2>
+        <input type="file" @change="batch.file = $event.target.files[0]" accept=".csv" class="border rounded-lg p-2">
+        <div class="flex justify-end gap-3 mt-3">
+            <button @click="batch.send()" :disabled="!batch.file || batch.loading"
+                    class="px-5 py-2 rounded-lg text-white"
+                    :class="batch.loading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">
+                <span x-text="batch.loading ? 'Отправка…' : 'Отправить'"></span>
+            </button>
+        </div>
+        <template x-if="batch.predictions">
+            <pre class="mt-4 bg-gray-100 p-4 rounded-lg overflow-auto text-sm"
+                 x-text="JSON.stringify(batch.predictions, null, 2)"></pre>
+        </template>
+    </section>
+
+    <!-- Evaluate ------------------------------------------------------------------->
+    <section x-show="tab === 'eval'" x-data="evalF" x-cloak class="space-y-6 max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-6">
+        <h2 class="text-2xl font-semibold">Оценка на разметке</h2>
+
+        <!-- === Выбор файла ================================================= -->
+        <input type="file"
+               x-ref="file"
+               accept=".csv"
+               class="block w-full border rounded p-2"/>
+
+        <!-- === Кнопка отправки ============================================ -->
+        <div class="flex justify-end">
+            <button
+                 @click="send"
+                 :disabled="loading"
+                 class="px-5 py-2 rounded-lg text-white flex items-center justify-center"
+                 :class="loading ? 'bg-gray-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'">
+                 <span x-text="loading ? 'Проверка…' : 'Отправить'"></span>
+            </button>
+        </div>
+
+        <!-- === Метрики ===================================================== -->
+        <h3 class="text-xl font-semibold" x-show="metrics">Метрики</h3>
+
+        <template x-if="metrics">
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-lg">
+                <span>Accuracy:</span> <span x-text="fmt(metrics.accuracy)"></span>
+                <span>Precision:</span> <span x-text="fmt(metrics.precision)"></span>
+                <span>Recall:</span> <span x-text="fmt(metrics.recall)"></span>
+                <span>F1-score:</span> <span x-text="fmt(metrics.f1)"></span>
+            </div>
+        </template>
+
+        <!-- === Confusion-matrix ============================== -->
+        <template x-if="metrics">
+            <div class="pt-6">
+                <h3 class="ftext-xl font-semibold">Матрица ошибок</h3>
+                <table class="border text-center">
+                    <template x-for="(row, i) in metrics.confusion">
+                        <tr>
+                            <template x-for="(cell, j) in row">
+                                <td class="border px-4 py-1" x-text="cell"></td>
+                            </template>
+                        </tr>
+                    </template>
+                </table>
+            </div>
+        </template>
+    </section>
+
+</div>
+
+<!-- App Logic ------------------------------------------------------------------>
+<script>
+    function app() {
+        const api = (url, options = {}) => fetch(url, options).then(r => {
+            if (!r.ok) throw new Error(r.statusText);
+            return r.json();
+        });
+
+        return {
+            tabs: [
+                {id: 'single', title: 'Единичный запрос'},
+                {id: 'add', title: 'Добавить данные'},
+                {id: 'retrain', title: 'Переобучить'},
+                {id: 'metrics', title: 'Метрики'},
+                {id: 'deploy', title: 'Деплой'},
+                {id: 'meta', title: 'Метаданные'},
+                {id: 'batch', title: 'Батч‑прогноз'},
+                {id: 'eval', title: 'Оценка'},
+            ],
+
+            // ---- SINGLE -----------------------------------------------------------
+            single: {
+                text: '', result: null, loading: false,
+                get percent() {
+                    return this.result ? (this.result.probability * 100).toFixed(2) : '';
+                },
+                async send() {
+                    this.loading = true;
+                    this.result = null;
+                    try {
+                        this.result = await api('/forward', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({text: this.text})
+                        });
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                    this.loading = false;
+                },
+                clear() {
+                    this.text = '';
+                    this.result = null;
+                },
+            },
+
+            // ---- ADD DATA ----------------------------------------------------------
+            add: {
+                file: null, rows: null, loading: false,
+                async upload() {
+                    if (!this.file) return;
+                    this.loading = true;
+                    this.rows = null;
+                    const fd = new FormData();
+                    fd.append('file', this.file);
+                    try {
+                        const r = await api('/add_data', {method: 'PUT', body: fd});
+                        this.rows = r.rows_added;
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                    this.loading = false;
+                }
+            },
+
+            // ---- RETRAIN -----------------------------------------------------------
+            retrain: {
+                loading: false, done: false,
+                async start() {
+                    this.loading = true;
+                    this.done = false;
+                    try {
+                        await api('/retrain', {method: 'PUT'});
+                        this.done = true;
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                    this.loading = false;
+                }
+            },
+
+            // ---- METRICS -----------------------------------------------------------
+            metrics: {
+                id: null, data: null,
+                async fetch() {
+                    if (!this.id) return;
+                    try {
+                        this.data = await api(`/metrics/${this.id}`);
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                        this.data = null;
+                    }
+                }
+            },
+
+            // ---- DEPLOY ------------------------------------------------------------
+            deploy: {
+                id: null, loading: false, status: null,
+                async run() {
+                    if (!this.id) return;
+                    this.loading = true;
+                    this.status = null;
+                    try {
+                        this.status = await api(`/deploy/${this.id}`, {method: 'POST'});
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                    this.loading = false;
+                }
+            },
+
+            // ---- META --------------------------------------------------------------
+            meta: {
+                loading: false, data: null,
+                async fetch() {
+                    this.loading = true;
+                    this.data = null;
+                    try {
+                        this.data = await api('/metadata');
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                    this.loading = false;
+                }
+            },
+
+            // ---- BATCH FORWARD -----------------------------------------------------
+            batch: {
+                file: null, loading: false, predictions: null,
+                async send() {
+                    if (!this.file) return;
+                    this.loading = true;
+                    this.predictions = null;
+                    const fd = new FormData();
+                    fd.append('file', this.file);
+                    try {
+                        const r = await api('/forward_batch', {method: 'POST', body: fd});
+                        this.predictions = r.predictions;
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                    this.loading = false;
+                }
+            },
+
+            // ---- EVALUATE ----------------------------------------------------------
+            evalF: {
+                file: null, loading: false, metrics: null,
+                fmt (v) {
+                    return (v * 100).toFixed(2) + ' %';
+                },
+                async send() {
+                    if (!this.$refs.file.files.length) {
+                        alert('Выберите CSV-файл');
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.metrics = null;
+
+                    try {
+                        const fd = new FormData();
+                        fd.append('file', this.$refs.file.files[0]);
+
+                        const r = await fetch('/evaluate', {method: 'POST', body: fd});
+                        if (!r.ok) throw new Error(await r.text());
+
+                        const json = await r.json();
+                        this.metrics = json.metrics;
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
+        };
+    }
+</script>
+</body>
+</html>
