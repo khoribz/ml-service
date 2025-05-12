@@ -25,7 +25,7 @@ flowchart LR
     A[Browser] -- HTTP/80 --> Nginx
     Nginx -- /forward* --> Backend
     Backend -- Pull metrics --> Prometheus
-    Backend -- Push experiment metrics --> Pushgateway
+    Backend -- Push experiment metrics --> Pushgateway --> Prometheus
     Prometheus -- Datasource --> Grafana
     Browser -- Web UI --> Grafana
 ```
