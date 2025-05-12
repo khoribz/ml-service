@@ -16,6 +16,3 @@ dvc:
 
 test:
 	pytest -q
-
-monitoring-up:
-	docker compose -f monitoring/docker-compose.yml up -d
