@@ -35,11 +35,7 @@ def _build_pipeline(max_iter: int) -> Pipeline:
 
 def git_hash() -> str:
     """short SHA of current HEAD"""
-    return (
-        subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-        .decode()
-        .strip()
-    )
+    return settings.GIT_HASH
 
 def train(df: pd.DataFrame | None = None) -> tuple[Path, dict]:
     if df is None:

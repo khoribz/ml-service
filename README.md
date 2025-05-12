@@ -44,6 +44,7 @@ $ git clone https://github.com/khoribz/ml-service.git
 $ cd ml-service
 
 # 2. Собрать и запустить
+$ export GIT_COMMIT=$(git rev-parse --short HEAD)
 $ docker compose up -d --build
 
 # 3. Проверить сервисы
