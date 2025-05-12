@@ -1,0 +1,67 @@
+schema: '2.0'
+stages:
+  extract_data:
+    cmd: PYTHONPATH=. python stages/extract_data.py
+    deps:
+    - path: src/
+      hash: md5
+      md5: 8e97913ff3b4a429652e6a21c2eb23d2.dir
+      size: 20371
+      nfiles: 20
+    outs:
+    - path: data/raw/sms.tsv
+      hash: md5
+      md5: 1949b64a224790d01335c2bf8a0e48b2
+      size: 477907
+  train_model:
+    cmd: PYTHONPATH=. python stages/train_model.py
+    deps:
+    - path: data/raw/sms.tsv
+      hash: md5
+      md5: 1949b64a224790d01335c2bf8a0e48b2
+      size: 477907
+    - path: src/ml_service
+      hash: md5
+      md5: a87ce255c919a2d3a863a47f44158c96.dir
+      size: 20217
+      nfiles: 18
+    params:
+      configs/params.yaml:
+        model.experiment: lr-tfidf-baseline
+        model.max_iter: 400
+    outs:
+    - path: metrics/train.json
+      hash: md5
+      md5: dd3d57549b2f2a89eb728b3d2c18c60f
+      size: 68
+    - path: models
+      hash: md5
+      md5: a803a5a72dfe68c66b5b1c57d3cb8681.dir
+      size: 224409
+      nfiles: 1
+    - path: plots/tb_logs
+      hash: md5
+      md5: def243a155cf55616267bd7099bdab35.dir
+      size: 183
+      nfiles: 1
+  inference_model:
+    cmd: PYTHONPATH=. python stages/inference.py
+    deps:
+    - path: data/raw/sms.tsv
+      hash: md5
+      md5: 1949b64a224790d01335c2bf8a0e48b2
+      size: 477907
+    - path: models
+      hash: md5
+      md5: a803a5a72dfe68c66b5b1c57d3cb8681.dir
+      size: 224409
+      nfiles: 1
+    outs:
+    - path: metrics/infer.json
+      hash: md5
+      md5: 6db4d70e82fccc2ca3f3ca7b350aac3c
+      size: 38
+    - path: plots/confusion.json
+      hash: md5
+      md5: 4901cd7951c73597d525c77911abee4e
+      size: 31

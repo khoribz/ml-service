@@ -1,0 +1,35 @@
+stages:
+  extract_data:
+    deps:
+      - src/
+    cmd: PYTHONPATH=. python stages/extract_data.py
+    outs:
+      - data/raw/sms.tsv
+
+  train_model:
+    cmd: PYTHONPATH=. python stages/train_model.py
+    deps:
+      - data/raw/sms.tsv
+      - src/ml_service
+    params:
+      - configs/params.yaml:
+          - model.max_iter
+          - model.experiment
+    outs:
+      - models
+    metrics:
+      - metrics/train.json
+    plots:
+      - plots/tb_logs:
+          cache: true
+
+  inference_model:
+    cmd: PYTHONPATH=. python stages/inference.py
+    deps:
+      - models
+      - data/raw/sms.tsv
+    metrics:
+      - metrics/infer.json
+    plots:
+      - plots/confusion.json:
+          template: confusion
