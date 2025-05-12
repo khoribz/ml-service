@@ -12,13 +12,14 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
+RUN git clone --depth 1 https://github.com/khoribz/ml-service.git /code
+
 WORKDIR /code
 COPY pyproject.toml ./
 
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir .
 
-COPY .git .git
 COPY . .
 
 ENV PYTHONPATH=/code
