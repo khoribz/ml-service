@@ -70,11 +70,11 @@ docker compose down -v
 .
 ├─ backend/           # FastAPI + модели
 │  └─ src/
+│  └─ data/           # DVC‑tracked датасеты
+│  └─ models/         # ONNX‑модели (prod и эксперименты)
+│  └─ Makefile        # локальные удобные команды
 ├─ frontend/          # JS + Nginx конфиг
 ├─ monitoring/        # Prometheus.yml, Grafana provisioning
-├─ data/              # DVC‑tracked датасеты
-├─ models/            # ONNX‑модели (prod и эксперименты)
-├─ Makefile           # локальные удобные команды
 └─ docker-compose.yml
 ```
 
@@ -103,10 +103,6 @@ curl -X POST http://localhost/forward \
 ---
 
 ## Использование фронтенда
-
-1. Откройте [http://localhost](http://localhost) — появится форма с полем текста и кнопкой «Проверить».
-2. Введите произвольное сообщение → нажмите кнопку.
-3. UI покажет «Вероятность спама: 97.12 %» (скриншот `docs/screenshots/forward_success.jpg`).
 
 | Действие                                        | Скриншот                                                       |
 |-------------------------------------------------|----------------------------------------------------------------|
@@ -137,7 +133,7 @@ curl http://localhost/metrics/12 | jq
 curl -X POST http://localhost/deploy/12
 ```
 
-Каждый retrain‑run пушит в Pushgateway метрики: `experiment_roc_auc{experiment_id="12"}`, `experiment_accuracy{…}`.
+Каждый retrain‑run пушит в Pushgateway метрики: `experiment_roc_auc{experiment_id="12"}`, `experiment_accuracy{experiment_id="12"}`.
 
 ---
 
@@ -148,7 +144,7 @@ curl -X POST http://localhost/deploy/12
 
   * кол‑во запросов/сек;
   * ошибки 4xx/5xx;
-  * p95 latency;
+  * p99 latency;
   * кривые `experiment_roc_auc`, `experiment_accuracy` для всех экспериментов.
 
 ![dashboard1](docs/screenshots/experiments_metrics.jpg)
