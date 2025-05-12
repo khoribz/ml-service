@@ -32,7 +32,7 @@ flowchart LR
 * **ML** датасет https://www.kaggle.com/uciml/sms-spam-collection-dataset
 * **Frontend** отдаёт статику и проксирует API‑запросы на `backend:8000`.
 * **Backend** выполняет инференс через ONNX Runtime, метрики отдаёт на `/metrics`.
-* **Prometheus** опрашивает `/metrics`, **Pushgateway** отправляет метрики экспериментов; Grafana объединяет всё в один дашборд.
+* **Prometheus** опрашивает `/metrics`, **Pushgateway** отправляет метрики экспериментов; **Grafana** объединяет всё в один дашборд.
 
 ---
 
