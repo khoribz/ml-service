@@ -1,25 +1,29 @@
+import io
 from pathlib import Path
+
 import onnx
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi import UploadFile, File, status
+import pandas as pd
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    precision_recall_fscore_support,
+)
 
 from src.ml_service.api.file_process import load_dataset
-from src.ml_service.api.metrics import PRED_LATENCY, ACTIVE_EXPERIMENT, BATCH_SIZE
+from src.ml_service.api.metrics import ACTIVE_EXPERIMENT, BATCH_SIZE, PRED_LATENCY
 from src.ml_service.api.models import (
-    TextRequest, PredictionResponse, MetaResponse, ForwardBatchResponse,
     EvaluationResponse,
+    ForwardBatchResponse,
+    MetaResponse,
+    PredictionResponse,
+    TextRequest,
 )
-from src.ml_service.experiments import save_experiment, load_metrics, deploy
+from src.ml_service.experiments import deploy, load_metrics, save_experiment
 from src.ml_service.inference import MODEL
 from src.ml_service.logging import logger
-
-from sklearn.metrics import (
-    accuracy_score, precision_recall_fscore_support, confusion_matrix
-)
-import pandas as pd, io
-
 from src.ml_service.training import train
 
 app = FastAPI(title="Spam‑ONNX API", version="1.0.0")
@@ -30,6 +34,7 @@ DATA_CSV = Path("data/train_data.csv")
 DATA_CSV.parent.mkdir(parents=True, exist_ok=True)
 if not DATA_CSV.exists():
     DATA_CSV.write_text("text,label\n")
+
 
 # ---- PUT /add_data --------------------------------------------------
 @app.put("/add_data", status_code=200)
@@ -42,6 +47,7 @@ async def add_data(file: UploadFile = File(...)):
     df_new.to_csv(DATA_CSV, mode="a", index=False, header=False)
     return {"rows_added": len(df_new)}
 
+
 # ---- PUT /retrain ---------------------------------------------------
 @app.put("/retrain", status_code=200)
 async def retrain(background_tasks: BackgroundTasks):
@@ -50,8 +56,10 @@ async def retrain(background_tasks: BackgroundTasks):
         model_path, metrics = train(df)
         eid = save_experiment(model_path, metrics, {"algo": "LogReg"})
         logger.info("experiment_saved", id=eid)
+
     background_tasks.add_task(_job)
     return {"message": "training started"}
+
 
 # ---- GET /metrics/{id} ---------------------------------------------
 @app.get("/metrics/{experiment_id}", status_code=200)
@@ -60,6 +68,7 @@ async def get_metrics(experiment_id: int):
         return load_metrics(experiment_id)
     except FileNotFoundError:
         raise HTTPException(404, "experiment not found")
+
 
 # ---- POST /deploy/{id} ---------------------------------------------
 @app.post("/deploy/{experiment_id}", status_code=200)
@@ -86,10 +95,7 @@ async def forward(payload: TextRequest):
 
 @app.get("/metadata", response_model=MetaResponse, status_code=200)
 async def metadata():
-    meta = {
-        p.key: p.value
-        for p in onnx.load(Path(MODEL.path)).metadata_props
-    }
+    meta = {p.key: p.value for p in onnx.load(Path(MODEL.path)).metadata_props}
     return meta
 
 
@@ -107,8 +113,10 @@ async def forward_batch(file: UploadFile = File(...)):
         raise HTTPException(400, "column 'text' missing")
 
     labels, probs = MODEL.predict_batch(df["text"].tolist())
-    preds = [{"index": i, "label": l, "probability": p}
-             for i, (l, p) in enumerate(zip(labels, probs))]
+    preds = [
+        {"index": i, "label": l, "probability": p}
+        for i, (l, p) in enumerate(zip(labels, probs))
+    ]
     return JSONResponse({"predictions": preds})
 
 
@@ -124,13 +132,18 @@ async def evaluate(file: UploadFile = File(...)):
     y_pred, y_prob = MODEL.predict_batch(df["text"].tolist())
 
     acc = accuracy_score(y_true, y_pred)
-    pr, rc, f1, _ = precision_recall_fscore_support(
-        y_true, y_pred, average="binary"
-    )
+    pr, rc, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="binary")
     cm = confusion_matrix(y_true, y_pred).tolist()
 
-    preds = [{"index": i, "label": y, "probability": p}
-             for i, (y, p) in enumerate(zip(y_pred, y_prob))]
-    metrics = {"accuracy": acc, "precision": pr, "recall": rc,
-               "f1": f1, "confusion": cm}
+    preds = [
+        {"index": i, "label": y, "probability": p}
+        for i, (y, p) in enumerate(zip(y_pred, y_prob))
+    ]
+    metrics = {
+        "accuracy": acc,
+        "precision": pr,
+        "recall": rc,
+        "f1": f1,
+        "confusion": cm,
+    }
     return JSONResponse({"predictions": preds, "metrics": metrics})

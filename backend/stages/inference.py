@@ -1,8 +1,11 @@
 """DVC stage — run model on full dataset and dump confusion‑matrix"""
+
 import json
 from pathlib import Path
+
 import pandas as pd
 from sklearn.metrics import confusion_matrix
+
 from src.ml_service.data import download_raw
 from src.ml_service.inference import MODEL
 

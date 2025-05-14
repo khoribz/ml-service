@@ -27,3 +27,6 @@ dependencies = [
     "prometheus_fastapi_instrumentator==6.1.0",
     "prometheus_client==0.20.0"
 ]
+
+[tool.flake8]
+max-line-length = 110

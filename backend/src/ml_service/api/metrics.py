@@ -1,4 +1,4 @@
-from prometheus_client import Summary, Gauge
+from prometheus_client import Gauge, Summary
 
 PRED_LATENCY = Summary(
     "prediction_latency_seconds",

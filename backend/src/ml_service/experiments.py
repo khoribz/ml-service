@@ -1,5 +1,6 @@
+import json
+import threading
 from pathlib import Path
-import json, threading
 
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
@@ -34,14 +35,14 @@ def save_experiment(model_path: Path, metrics: dict, params: dict) -> int:
         "experiment_roc_auc",
         "roc_auc for given experiment",
         ["experiment_id"],
-        registry=reg
+        registry=reg,
     ).labels(experiment_id=eid).set(metrics["roc_auc"])
 
     Gauge(
         "experiment_accuracy",
         "accuracy for given experiment",
         ["experiment_id"],
-        registry=reg
+        registry=reg,
     ).labels(experiment_id=eid).set(metrics["accuracy"])
 
     Gauge("experiment_id", "Index of experiment", registry=reg).set(eid)

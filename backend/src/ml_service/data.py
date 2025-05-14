@@ -1,7 +1,9 @@
 from pathlib import Path
-import requests
+
 import pandas as pd
+import requests
 from sklearn.model_selection import train_test_split
+
 from .config import settings
 from .logging import logger
 
@@ -29,6 +31,7 @@ def load_split(test_size: float = 0.2, random_state: int = 42):
         stratify=df["label"],
         random_state=random_state,
     )
+
 
 def load_df(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42):
     return train_test_split(
