@@ -21,6 +21,7 @@ class BatchPrediction(BaseModel):
     label: int
     probability: float
 
+
 class ForwardBatchResponse(BaseModel):
     predictions: list[BatchPrediction]
 

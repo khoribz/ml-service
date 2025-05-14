@@ -1,24 +1,27 @@
-import subprocess
-from datetime import datetime, UTC
-from pathlib import Path
 import json
+from datetime import UTC, datetime
+from pathlib import Path
+
 import onnx
 import pandas as pd
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import StringTensorType
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.pipeline import Pipeline
 from torch.utils.tensorboard import SummaryWriter
-from .config import settings
-from .logging import logger
-from .data import load_split, load_df
 
-MODELS_DIR = Path("models"); MODELS_DIR.mkdir(exist_ok=True)
-METRICS_DIR = Path("metrics"); METRICS_DIR.mkdir(exist_ok=True)
-PLOTS_DIR = Path("plots/tb_logs"); PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+from .config import settings
+from .data import load_df, load_split
+from .logging import logger
+
+MODELS_DIR = Path("models")
+MODELS_DIR.mkdir(exist_ok=True)
+METRICS_DIR = Path("metrics")
+METRICS_DIR.mkdir(exist_ok=True)
+PLOTS_DIR = Path("plots/tb_logs")
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _build_pipeline(max_iter: int) -> Pipeline:
@@ -37,6 +40,7 @@ def git_hash() -> str:
     """short SHA of current HEAD"""
     return settings.GIT_HASH
 
+
 def train(df: pd.DataFrame | None = None) -> tuple[Path, dict]:
     if df is None:
         X_tr, X_val, y_tr, y_val = load_split()
@@ -51,10 +55,9 @@ def train(df: pd.DataFrame | None = None) -> tuple[Path, dict]:
     pipe.fit(X_tr, y_tr)
     prob = pipe.predict_proba(X_val)[:, 1]
     writer.add_scalar("val/roc_auc", roc_auc_score(y_val, prob), 0)
-    writer.add_scalar(
-        "val/accuracy", accuracy_score(y_val, pipe.predict(X_val)), 0
-    )
-    writer.flush(); writer.close()
+    writer.add_scalar("val/accuracy", accuracy_score(y_val, pipe.predict(X_val)), 0)
+    writer.flush()
+    writer.close()
 
     model_path = MODELS_DIR / f"{settings.EXPERIMENT}.onnx"
 
@@ -70,7 +73,8 @@ def train(df: pd.DataFrame | None = None) -> tuple[Path, dict]:
         "saved_at": datetime.now(UTC).isoformat(),
         "experiment": settings.EXPERIMENT,
     }.items():
-        p = onx.metadata_props.add(); p.key, p.value = k, v
+        p = onx.metadata_props.add()
+        p.key, p.value = k, v
 
     onnx.save(onx, model_path)
     logger.info("model_saved", path=str(model_path))
